@@ -1,0 +1,546 @@
+---
+title: "NBIS Report"
+subtitle: '`r format(Sys.Date(),format="%d-%b-%Y")`'
+output:
+  rmarkdown::html_document:
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+      print: false
+    toc_depth: 4
+    number_sections: true
+    highlight: tango
+    df_print: paged
+    code_folding: "show"
+    self_contained: true
+    keep_md: false
+    encoding: 'UTF-8'
+    css: "assets/report.css"
+---
+
+```{r,child="assets/_header-lab.Rmd"}
+```
+
+<!-- ----------------------- Do not edit above this ----------------------- -->
+
+```{r,echo=FALSE,include=FALSE}
+# CUSTOM VARIABLES
+
+# custom ggplot theme
+theme_report_h <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid.minor=element_blank(),
+      panel.grid.major.x=element_blank(),
+      legend.position="top",
+      legend.direction="horizontal",
+      legend.justification="center",
+      strip.background=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.ticks.x=element_line(colour=colour),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_report <- theme_report_v <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid.minor=element_blank(),
+      panel.grid.major.x=element_blank(),
+      legend.position="right",
+      legend.direction="vertical",
+      legend.justification="center",
+      strip.background=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.ticks.x=element_line(colour=colour),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_simple_h <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid=element_blank(),
+      legend.justification="center",
+      legend.position="top",
+      legend.direction="horizontal",
+      strip.background=element_blank(),
+      axis.ticks=element_blank(),
+      axis.text=element_blank(),
+      axis.title=element_blank(),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_simple_v <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid=element_blank(),
+      legend.justification="center",
+      legend.position="right",
+      legend.direction="vertical",
+      strip.background=element_blank(),
+      axis.ticks=element_blank(),
+      axis.text=element_blank(),
+      axis.title=element_blank(),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+#colours
+col_sll_green <- "#95C11E"
+col_sll_blue <- "#0093BD"
+col_sll_orange <- "#EF7C00"
+col_sll_green_light <- "#f4f8e8"
+col_sll_blue_light <- "#e5f4f8"
+col_sll_orange_light <- "#fdf1e5"
+
+# project variables
+rep_nbis_id <- "SMS_6043"
+rep_report_version <- "0.8"
+rep_request <- "Johannes Ehinger"
+rep_request_email <- "johannes.ehinger@med.lu.se "
+rep_pi <- "Eskil Elmér"
+rep_pi_email <- "eskil.elmér@med.lu.se"
+rep_org <- "Lund University"
+rep_nbis <- "Juliana Assis"
+rep_nbis_email <- "juliana.assis@nbis.se"
+```
+
+<br>
+
+::: boxy
+__NBIS ID:__ `r rep_nbis_id`   
+__Report Version:__ `r rep_report_version`  
+__Request by:__ `r paste0(rep_request," (",rep_request_email,")")`  
+__Principal Investigator:__ `r paste0(rep_pi," (",rep_pi_email,")")`   
+__Organisation:__ `r rep_org`  
+__NBIS Staff:__ `r paste0(rep_nbis," (",rep_nbis_email,")")`  
+:::
+
+<br>
+
+# Setup
+
+```{r,echo=TRUE}
+## LIBRARIES
+# load the packages you need for this document
+library("vcfR")
+# library(ggplot2)
+```
+
+# Version
+
+0.9
+
+# Support Request  
+
+Request sent by the user.
+
+# Data  
+
+* Type of data  
+
+Mitochondrial DNA
+
+* Data location
+
+/proj/sens2022514/
+
+* Uppmax project ID
+
+sens2022514
+
+* Reference data used
+
+GRCh38.p14
+
+
+# Tools
+GATK best practices
+
+
+# Research Question
+
+This is a project assessing mitochondrial function in patients with neurodegenerative disease (Parkinsons, corticobasal degeneration, multiple systems atrophy, progressive supranuclear palsy and essential tremor) compared to controls. The material is blood cells. Functional mitochondrial analyses have been performed, measuring oxygen consumption in blood cells. About 160 subjects in total. NGS targeted on mtDNA using TWIST capture has been performed on an Illumina platform.
+
+**Two research questions:**
+
+**1) Is there a difference in occurrence of mtDNA deletions and general mutation load between controls and the difference disease groups?**
+
+**2) More explorative, as preliminary data for future larger studies: What variants in mtDNA are associated with high or low mitochondrial respiratory function in the material in total. **
+
+# Workflow
+
+## Mitochondrial short variant discovery (SNVs + Indels) 
+
+**Using GATK best practices for mitochondrial DNA** 
+
+BWA 
+
+```{r}
+
+```
+
+### Subset to keep only the reads mapped to the mitochondrial genome
+
+Tools involved: PrintReads - SubsetBamtoChrM 
+This step filters the input WGS file to keep only the ChrM mapped reads. 
+
+### Revert the ChrM mapped reads from an aligned BAM to an unaligned BAM file
+
+Tools involved: RevertSam 
+
+This step reverts the aligned BAM file containing only the reads mapped to the mitochondria to remove all alignment information while retaining the recalibrated base qualities and original alignment tags. 
+
+### Align the unmapped BAM file with the reference aligned BAM and shifted reference aligned BAM
+
+Tools involved: MergeBamAlignment 
+
+This step merges the unaligned BAM file with the reference BAM file for the mitochondrial genome. The BAM file must also be aligned with the shifted mitochondrial BAM file. The shifted reference moves the breakpoint of the mitochondrial genome from the non-coding control region to the opposite side of the contig. This allows for sensitivity in the control region to account for variability across individuals. 
+
+### Identify Duplicate Reads
+
+Tools involved: MarkDuplicates 
+This step identifies and tags duplicate reads in the aligned BAM files. 
+
+### Collect coverage and performance metrics for BAM file
+
+Tools involved: CollectWgsMetrics 
+
+This step collects several metrics for evaluating the coverage and performance of the WGS experiment. This includes the fraction of bases that pass base and mapping quality filters as well as coverage levels. 
+
+### Call variants in aligned BAM files
+
+Tools involved: Mutect2 - CallMt and CallShiftedMt 
+
+This step calls mitochondrial variants in the non-control region using the BAM file aligned to the mitochondrial reference and in the control region using the BAM file aligned to the shifted mitochondrial reference. Running Mutect2 in mitochondrial mode automatically sets parameters appropriately for calling on mitochondria with the --mitochondria flag. Specifically, the mode sets –-initial-tumor-lod to 0, –-tumor-lod-to-emit to 0, --af-of-alleles-not-in-resource to 4e-3, and the advanced parameter --pruning-lod-threshold to -4. Setting the advanced option --median-autosomal-coverage argument (default 0) activates a recommended filter against likely erroneously mapped NuMTs (nuclear mitochondrial DNA segments). For the value, provide the median coverage expected in autosomal regions with coverage. 
+
+
+### Liftover the output VCF files
+
+Tools involved: LiftoverVcf 
+
+This step returns the variant calls back to the standard numbering system with the original alignment (OA) tags. 
+
+### Combine the variant calls from the control region with the non-control region
+
+Tools involved: MergeVcfs 
+
+This step merges the output VCF file for the control region (BAM aligned to shifted reference) with the VCF file for the non-control region into a single variant file. 
+
+### Merge stats files for output VCFs
+
+Tools Involved: Mutect2- MergeMutectStats 
+
+This step merges the stats file for the variant calls of the control region with the stats file for the variant calls of the non-control region. 
+
+### Filter the Variant Calls by Parameters
+
+Tools involved: FilterMutectCalls 
+
+This step filters the output VCF files based on specific parameters, such as a minimum allele fraction, maximum alternate allele count, and estimate of contamination. The --autosomal-coverage parameter specifically filters out potential NuMTs. Specifying the --mitochondrial-mode parameter automatically sets the filters to the mitochondrial defaults. 
+
+### Filter out Blacklisted Sites
+
+Tools involved: VariantFiltration 
+
+This step filters out blacklisted sites containing unwanted artifacts. 
+
+## SnpSift CaseControl
+
+### Functional prediction and annotation
+
+Variant annotation was performed with snpEff, as implemented in the SAREK pipeline. In this project we focused mainly on non-synonymous (missense) single-nucleotide variants (SNVs) that cause a codon that produces a different amino acid compared to the reference genome. 
+
+**Genome-wide summaries** 
+A summary of different impacts of variants as well as missense and synonymous variants was generated from the snpEff results (collected in /proj/sens2021603/data/snpEff_results/HaplotypeCaller_*.g_snpEff.csv for all samples). See the snpEff documentation on impact prediction for more details on impact categories. 
+
+>High impact: high (disruptive) impact in the protein, probably causing protein truncation, loss of function or triggering nonsense mediated decay.
+Low impact: mostly harmless or unlikely to change protein behavior.
+Moderate impact: non-disruptive variant that might change protein effectiveness.
+Modifier impact: usually non-coding variants or variants affecting non-coding genes, where predictions are difficult or there is no evidence of impact.
+Missense variant: non-synonymous variant, causes a codon that produces a different amino acid.
+Synonymous variant: causes a codon that produces the same amino acid.
+
+
+**Candidate gene analysis**
+A list of candidate genes that might be associated with the studied phenotypes was analyzed for non-synonymous and synonymous variants and for data quality. The candidate genes. 
+
+## Control vs Condition
+
+>Control vs **Parkinson disease (PD) & PD-DN**   
+Control vs **Corticobasal degeneration (CBD)**  
+Control vs **Essential Tremor (ET)**  
+Control vs **Multiple system atrophy (MSA)**  
+Control vs **Progressive supranuclear palsy (PSP)**  
+
+Number of individual per condition
+
+>**Control** n = 56   
+**CBD** n = 7   
+**ET** n = 17    
+**MSA** n = 10    
+**PD + PD-DN** n = 63    
+**PD** n = 50    
+**PD-DN** n = 13   
+**PSP** n = 12   
+
+## By group better
+
+```{r}
+## Plot PCA for ethnicity of a given VCF file
+
+## Import publication theme
+## A nice R ggplot theme that I found online. Original can be found here:
+## https://rpubs.com/Koundy/71792
+
+theme_Publication <- function(base_size=14, base_family="helvetica") {
+  library(grid)
+  library(ggthemes)
+  (theme_foundation(base_size=base_size, base_family=base_family)
+  + theme(plot.title = element_text(face = "bold",
+                                    size = rel(1.2), hjust = 0.5),
+          text = element_text(),
+          panel.background = element_rect(colour = NA),
+          plot.background = element_rect(colour = NA),
+          panel.border = element_rect(colour = NA),
+          axis.title = element_text(face = "bold",size = rel(1)),
+          axis.title.y = element_text(angle=90,vjust =2),
+          axis.title.x = element_text(vjust = -0.2),
+          axis.text = element_text(), 
+          axis.line = element_line(colour="black"),
+          axis.ticks = element_line(),
+          panel.grid.major = element_line(colour="#f0f0f0"),
+          panel.grid.minor = element_blank(),
+          legend.key = element_rect(colour = NA),
+          legend.position = "bottom",
+          legend.direction = "horizontal",
+          legend.key.size= unit(0.2, "cm"),
+          legend.margin = unit(0, "cm"),
+          legend.title = element_text(face="italic"),
+          plot.margin=unit(c(10,5,5,5),"mm"),
+          strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+          strip.text = element_text(face="bold")
+  ))
+  
+}
+
+scale_fill_Publication <- function(...){
+  library(scales)
+  discrete_scale("fill","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+  
+}
+
+scale_colour_Publication <- function(...){
+  library(scales)
+  discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+  
+}
+
+## Import libraries
+library(gdsfmt)
+library(SNPRelate)
+library(ggplot2)
+library(ggdendro)
+library(RColorBrewer)
+library(plyr)
+library(dplyr)
+
+## Set working directory
+## Set color palette for populations
+color_palette <- c("#912CEE","#f40000","#4DBD33","#4885ed","#ffc300","#2b2b28")
+
+## Specify your VCF file
+vcf.fn <- "my.vcf"
+
+# Transform the VCF file into gds format
+snpgdsVCF2GDS(vcf.fn, "Variants_1000G_exomes.gds", method="biallelic.only")
+
+## Data Analysis
+## open the newly created gds file
+genofile <- snpgdsOpen('Variants_1000G_exomes.gds')
+
+## LD based SNP pruning
+set.seed(1000)
+snpset <- snpgdsLDpruning(genofile, ld.threshold=0.2)
+snpset.id <- unlist(snpset)
+
+## Perform PCA on the SNP data
+pca <- snpgdsPCA(genofile, snp.id=snpset.id, num.thread=4)
+pc.percent <- pca$varprop*100
+head(round(pc.percent, 2))
+
+### Plotting
+### Plot results from PCA analysis of variant data
+tab12 <- data.frame(sample.id = pca$sample.id,
+                  EV1 = pca$eigenvect[,1], # the first eigenvector
+                  EV2 = pca$eigenvect[,2], # the second eigenvector
+                  stringsAsFactors = FALSE)
+
+tab34 <- data.frame(sample.id = pca$sample.id,
+                 EV3 = pca$eigenvect[,3], # the first eigenvector
+                 EV4 = pca$eigenvect[,4], # the second eigenvector
+                 stringsAsFactors = FALSE)
+
+plot(tab34$EV2, tab34$EV1, xlab="eigenvector 3", ylab="eigenvector 4")
+
+## Assign ethnicity description from 1000G file
+sample.id <- read.gdsn(index.gdsn(genofile, "sample.id"))
+populations <- read.table("All_samples_populations.tab",header=T)
+
+tab <- data.frame(sample.id = pca$sample.id,
+                  EV1 = pca$eigenvect[,1],    # the first eigenvector
+                  EV2 = pca$eigenvect[,2],    # the second eigenvector
+                  stringsAsFactors = FALSE)
+colnames(tab) <- c("sample.id","EV1","EV2")
+
+PCA_allVariants2 <- ggplot(tab,aes(x=EV1,y=EV2)) +
+  geom_point(size=2) +
+  scale_x_continuous("PC1") +
+  scale_y_continuous("PC2") +
+  scale_colour_manual(values=color_palette[1:length(unique(tab$pop))]) +
+  theme_Publication()
+PCA_allVariants2
+ggsave(file="Variants_PCA_pointsize2.svg",plot=PCA_allVariants2)
+
+ggsave(file="Variants_PCA_pointsize1.svg",plot=PCA_allVariants1)
+```
+
+
+```{r}
+pkg <- "pinfsc50"
+vcf_file <- system.file("extdata", "pinf_sc50.vcf.gz", package = pkg)
+dna_file <- system.file("extdata", "pinf_sc50.fasta", package = pkg)
+gff_file <- system.file("extdata", "pinf_sc50.gff", package = pkg)
+
+vcf <- read.vcfR( vcf_file, verbose = FALSE )
+
+```
+
+```{r}
+dna <- ape::read.dna(dna_file, format = "fasta")
+
+```
+
+```{r}
+gff <- read.table(gff_file, sep="\t", quote="")
+
+```
+
+
+# Summary
+
+
+
+# Further Work  
+
+Further steps to be taken (if needed).
+
+# References
+
+GATK:
+https://gatk.broadinstitute.org/hc/en-us/articles/4403870837275-Mitochondrial-short-variant-discovery-SNVs-Indels-
+
+# Deliverables  
+
+Files delivered to the user with descriptions.
+
+## Directory  
+
+```sh
+/data/processed/b/
+├── clustering
+│   ├── 08
+│   │   ├── clusters.png
+│   │   ├── dge
+│   │   ├── figures
+│   │   ├── markers-dotplot.png
+│   │   ├── markers-heatmap.png
+│   │   ├── markers.Rds
+│   │   ├── markers.xlsx
+│   │   ├── spatial-sample-celltype.png
+│   │   └── umap-sample-celltype.png
+│   ├── 08-subset
+│   │   ├── dge
+│   │   ├── figures
+│   │   ├── seurat-08-subset.Rds (seurat file subsetted)
+│   │   ├── spatial-sample-celltype.png
+│   │   └── umap-sample-celltype.png
+│   └── optimising
+│       ├── clustering-optimising-resolution.png
+│       ├── clusters-spatial.png
+│       ├── clusters-umap.png
+│       └── clustree.png
+├── qc-spatial.png
+├── qc-umap.png
+├── qc-violin.png
+└── seurat-cre-pcsk9.Rds (complete seurat file with clusters)
+
+8 directories, 18 files
+```
+
+Total size is 70 GB.
+
+# Timeline
+
+# Practical Info  
+## Data responsibility
+
+The responsibility for data archiving lies with the PI of the project. We do not offer long-term storage or retrieval of data.
+
++ __NBIS & Uppnex: __ We kindly ask that you remove the files from UPPMAX/UPPNEX. The main storage at UPPNEX is optimized for high-speed and parallel access, which makes it expensive and not the right place for longer time archiving. Please consider others by not taking up the expensive space. Please note that UPPMAX is a resource separate from the Bioinformatics Platform, administered by the Swedish National Infrastructure for Computing (SNIC) and SNIC-specifc project rules apply to all projects hosted at UPPMAX.   
++ __Sensitive data :__ Please note that special considerations may apply to the human-derived legally considered sensitive personal data. These should be handled according to specific laws and regulations as outlined e.g. [here](http://nbis.se/support/human-data.html).  
++ __Long-term backup :__ We recommend asking your local IT for support with long-term data archiving. Also a newly established [Data Office](https://www.scilifelab.se/data/) at SciLifeLab may be of help to discuss other options.  
+
+## Acknowledgments
+
+If you are presenting the results in a paper, at a workshop or conference, we kindly ask you to acknowledge us.
+
++ __NBIS staff__ are encouraged to be co-authors when this is merited in accordance to the ethical recommendations for authorship, e.g. [ICMJE recommendations](http://www.icmje.org/recommendations/browse/roles-and-responsibilities/defining-the-role-of-authors-and-contributors.html). If applicable, please include Juliana, Assis, National Bioinformatics Infrastructure Sweden, Science for Life Laboratory, as co-author. In other cases, NBIS would be grateful if support by us is acknowledged in publications according to this example:
+
+> "Support by NBIS (National Bioinformatics Infrastructure Sweden) is gratefully acknowledged."
+
++ __UPPMAX__ kindly asks you to [acknowledge UPPMAX and SNIC](https://www.uppmax.uu.se/support/faq/general-miscellaneous-faq/acknowledging-uppmax--snic--and-uppnex/). If applicable, please add:
+
+> "The computations were performed on resources provided by SNIC through Uppsala Multidisciplinary Center for Advanced Computational Science (UPPMAX) under Project SNIC 
+sens2022514."
+
++ __NGI :__ For publications based on data from NGI Sweden, NGI, SciLifeLab and UPPMAX should be [acknowledged](https://ngisweden.scilifelab.se/info/faq#how-do-i-acknowledge-ngi-in-my-publication) like so:  
+
+> "The authors would like to acknowledge support from Science for Life Laboratory (SciLifeLab), the National Genomics Infrastructure (NGI), and Uppsala Multidisciplinary Center for Advanced Computational Science (UPPMAX) for providing assistance in massive parallel sequencing and computational infrastructure."
+
+# Support Completion  
+
+You should soon be contacted by one of our managers with a request to close down the project in our internal system and for invoicing matters. If we do not hear from you within 30 days the project will be automatically closed and invoice sent. Again, we would like to remind you about data responsibility and acknowledgements, see sections: **Data Responsibility** and **Acknowledgments**.
+
+You are welcome to come back to us with further data analysis request at any time via http://nbis.se/support/support.html.
+
+Thank you for using NBIS.
+
+<!-- --------------------- Do not edit this and below ---------------------- -->
+
+</br>
+
+```{r,eval=FALSE,echo=FALSE}
+# manually run this to render this document to HTML
+rmarkdown::render("nbis-report.Rmd")
+# then run this to convert HTML to PDF (if needed)
+#pagedown::chrome_print("nbis-report.html",output="nbis-report.pdf")
+```
